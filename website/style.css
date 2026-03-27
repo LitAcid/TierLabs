@@ -1,0 +1,60 @@
+body {
+  margin: 0;
+  background: radial-gradient(circle at top, #0f0f0f, #050505);
+  color: white;
+  font-family: 'Segoe UI';
+}
+
+header {
+  text-align: center;
+  padding: 20px;
+  font-size: 40px;
+  font-weight: bold;
+}
+
+.search {
+  text-align: center;
+  margin: 20px;
+}
+
+.search input {
+  padding: 10px;
+  width: 250px;
+  border-radius: 8px;
+  border: none;
+}
+
+.leaderboard {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.player {
+  background: rgba(255,255,255,0.05);
+  margin: 15px;
+  padding: 20px;
+  border-radius: 15px;
+  width: 250px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.player:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px cyan;
+}
+
+.mode {
+  display: flex;
+  justify-content: space-between;
+}
+
+.tier {
+  color: cyan;
+}
+
+.icon {
+  width: 20px;
+  vertical-align: middle;
+}

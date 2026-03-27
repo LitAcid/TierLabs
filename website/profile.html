@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Player Profile - TierLabs</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial;
+  background: #0f0f0f;
+  color: white;
+  text-align: center;
+}
+
+.container {
+  margin-top: 50px;
+}
+
+h1 {
+  font-size: 40px;
+}
+
+.tiers {
+  margin-top: 30px;
+}
+
+.tier {
+  background: #1a1a1a;
+  padding: 15px;
+  margin: 10px auto;
+  width: 250px;
+  border-radius: 10px;
+  font-size: 20px;
+}
+</style>
+
+</head>
+<body>
+
+<div class="container">
+  <h1 id="name">Loading...</h1>
+
+  <div class="tiers" id="tiers">
+    <!-- tiers will load here -->
+  </div>
+</div>
+
+<script>
+const API = "https://tierlabs-backend.onrender.com";
+
+// get username from URL
+const params = new URLSearchParams(window.location.search);
+const player = params.get("name");
+
+if (!player) {
+  document.getElementById("name").innerText = "No player provided";
+} else {
+  fetch(`${API}/player/${player}`)
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById("name").innerText = player;
+
+      const tiersDiv = document.getElementById("tiers");
+
+      if (!data || Object.keys(data).length === 0) {
+        tiersDiv.innerHTML = "<p>No data found</p>";
+        return;
+      }
+
+      for (let mode in data) {
+        const div = document.createElement("div");
+        div.className = "tier";
+        div.innerText = mode.toUpperCase() + " : " + data[mode];
+        tiersDiv.appendChild(div);
+      }
+    })
+    .catch(() => {
+      document.getElementById("name").innerText = "Error loading profile";
+    });
+}
+</script>
+
+</body>
+</html>
