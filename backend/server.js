@@ -1,44 +1,96 @@
 const express = require("express");
-const app = express();
 const cors = require("cors");
+const fs = require("fs");
+const path = require("path");
 
+const app = express();
 app.use(cors());
 app.use(express.json());
 
-let players = {};
+const PORT = process.env.PORT || 3000;
+const DATA_FILE = path.join(__dirname, "data.json");
 
-// ✅ SAVE RESULT FROM BOT
-app.post("/result", (req, res) => {
-  const { player, gamemode, tier } = req.body;
+function loadData() {
+  try {
+    if (!fs.existsSync(DATA_FILE)) {
+      return {};
+    }
 
-  if (!player || !gamemode || !tier) {
-    return res.status(400).json({ error: "Missing data" });
+    const raw = fs.readFileSync(DATA_FILE, "utf8");
+    return raw ? JSON.parse(raw) : {};
+  } catch (error) {
+    console.error("Failed to load data:", error);
+    return {};
   }
+}
 
-  if (!players[player]) players[player] = {};
-  players[player][gamemode] = tier;
+function saveData(data) {
+  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), "utf8");
+}
 
-  console.log("Saved:", player, gamemode, tier);
-
-  res.json({ success: true });
-});
-
-// ✅ GET ALL PLAYERS
-app.get("/data", (req, res) => {
-  res.json(players);
-});
-
-// ✅ GET SINGLE PLAYER
-app.get("/player/:name", (req, res) => {
-  const name = req.params.name;
-  res.json(players[name] || {});
-});
-
-// ✅ ROOT (IMPORTANT FOR RENDER)
 app.get("/", (req, res) => {
   res.send("TierLabs Backend Running");
 });
 
-// ✅ PORT FIX FOR RENDER
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log("Backend running on port " + PORT));
+app.get("/data", (req, res) => {
+  res.json(loadData());
+});
+
+app.get("/players", (req, res) => {
+  res.json(loadData());
+});
+
+app.get("/player/name/:username", (req, res) => {
+  const data = loadData();
+  const username = req.params.username.toLowerCase();
+
+  const player = Object.values(data).find(
+    (entry) => (entry.username || "").toLowerCase() === username
+  );
+
+  res.json(player || null);
+});
+
+app.post("/result", (req, res) => {
+  try {
+    const { userId, username, mode, tier } = req.body;
+
+    if (!userId || !username || !mode || !tier) {
+      return res.status(400).json({
+        success: false,
+        error: "Missing one of: userId, username, mode, tier"
+      });
+    }
+
+    const data = loadData();
+
+    if (!data[userId]) {
+      data[userId] = {
+        userId,
+        username,
+        tiers: {}
+      };
+    }
+
+    data[userId].username = username;
+    data[userId].tiers[mode] = tier;
+
+    saveData(data);
+
+    console.log("Saved result:", { userId, username, mode, tier });
+
+    return res.json({
+      success: true
+    });
+  } catch (error) {
+    console.error("POST /result failed:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Internal server error"
+    });
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`Backend running on port ${PORT}`);
+});

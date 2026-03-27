@@ -11,20 +11,17 @@ const {
   PermissionsBitField
 } = require("discord.js");
 
-// Keep Render happy with an open port
-http.createServer((req, res) => {
-  res.writeHead(200, { "Content-Type": "text/plain" });
-  res.end("TierLabs Bot Running");
-}).listen(process.env.PORT || 3000);
+http
+  .createServer((req, res) => {
+    res.writeHead(200, { "Content-Type": "text/plain" });
+    res.end("TierLabs Bot Running");
+  })
+  .listen(process.env.PORT || 3000);
 
 const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMembers
-  ]
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers]
 });
 
-// ===== CONFIG =====
 const QUEUE_CHANNEL_ID = process.env.QUEUE_CHANNEL_ID || "1486643483757248563";
 const RESULT_CHANNEL_ID = process.env.RESULT_CHANNEL_ID || "1486644407943037039";
 const API_URL = process.env.API_URL || "https://tierlabs-backend.onrender.com";
@@ -32,7 +29,6 @@ const TEST_CATEGORY_NAME = "tests";
 
 const modes = ["crystal", "axe", "nethpot", "sword", "uhc", "pot", "smp"];
 
-// ===== DATA =====
 const queues = {};
 const testerStatus = {};
 let activeTesterMode = null;
@@ -43,7 +39,6 @@ for (const mode of modes) {
   testerStatus[mode] = false;
 }
 
-// ===== UI =====
 function createRows() {
   const joinButtons = modes.map((mode) =>
     new ButtonBuilder()
@@ -61,9 +56,7 @@ function createRows() {
   const rows = [];
 
   for (let i = 0; i < joinButtons.length; i += 5) {
-    rows.push(
-      new ActionRowBuilder().addComponents(joinButtons.slice(i, i + 5))
-    );
+    rows.push(new ActionRowBuilder().addComponents(joinButtons.slice(i, i + 5)));
   }
 
   rows.push(new ActionRowBuilder().addComponents(leaveButton));
@@ -72,15 +65,12 @@ function createRows() {
 }
 
 async function updateUI(channel, pingEveryone = false) {
-  const statusLines = modes.map((mode) => {
-    return `${testerStatus[mode] ? "🟢" : "🔴"} ${mode.toUpperCase()}`;
-  });
+  const statusLines = modes.map(
+    (mode) => `${testerStatus[mode] ? "🟢" : "🔴"} ${mode.toUpperCase()}`
+  );
 
   let content = `🎟️ **TierLabs Queue**\n\n${statusLines.join("\n")}`;
-
-  if (pingEveryone) {
-    content = `@everyone\n${content}`;
-  }
+  if (pingEveryone) content = `@everyone\n${content}`;
 
   if (queueMessage) {
     await queueMessage.edit({
@@ -101,26 +91,20 @@ function removeUserFromAllQueues(userId) {
   }
 }
 
-// ===== READY =====
 client.once("clientReady", async () => {
-  console.log(`✅ Logged in as ${client.user.tag}`);
-  console.log(`API_URL = ${API_URL}`);
-  console.log(`QUEUE_CHANNEL_ID = ${QUEUE_CHANNEL_ID}`);
-  console.log(`RESULT_CHANNEL_ID = ${RESULT_CHANNEL_ID}`);
+  console.log(`Logged in as ${client.user.tag}`);
+  console.log("API_URL =", API_URL);
 
   try {
     const queueChannel = await client.channels.fetch(QUEUE_CHANNEL_ID);
-    console.log(`✅ Queue channel found: ${queueChannel.name}`);
     await updateUI(queueChannel);
   } catch (error) {
-    console.error("❌ Failed to initialize queue UI:", error);
+    console.error("Queue init failed:", error);
   }
 });
 
-// ===== INTERACTIONS =====
 client.on("interactionCreate", async (interaction) => {
   try {
-    // ===== BUTTONS =====
     if (interaction.isButton()) {
       await interaction.deferUpdate();
 
@@ -128,14 +112,12 @@ client.on("interactionCreate", async (interaction) => {
 
       if (interaction.customId === "leave_queue") {
         removeUserFromAllQueues(userId);
-
         const queueChannel = await client.channels.fetch(QUEUE_CHANNEL_ID);
         await updateUI(queueChannel);
         return;
       }
 
       const mode = interaction.customId.replace("join_", "");
-
       if (!modes.includes(mode)) return;
       if (!testerStatus[mode]) return;
       if (queues[mode].includes(userId)) return;
@@ -148,10 +130,8 @@ client.on("interactionCreate", async (interaction) => {
       return;
     }
 
-    // ===== SLASH COMMANDS =====
     if (!interaction.isChatInputCommand()) return;
 
-    // ===== /next =====
     if (interaction.commandName === "next") {
       await interaction.deferReply({ ephemeral: true });
 
@@ -212,7 +192,6 @@ client.on("interactionCreate", async (interaction) => {
       return;
     }
 
-    // ===== /tester =====
     if (interaction.commandName === "tester") {
       await interaction.deferReply({ ephemeral: true });
 
@@ -223,7 +202,6 @@ client.on("interactionCreate", async (interaction) => {
 
       if (action === "online") {
         for (const m of modes) testerStatus[m] = false;
-
         testerStatus[mode] = true;
         activeTesterMode = mode;
 
@@ -250,7 +228,6 @@ client.on("interactionCreate", async (interaction) => {
       return;
     }
 
-    // ===== /result =====
     if (interaction.commandName === "result") {
       await interaction.deferReply({ ephemeral: true });
 
@@ -265,20 +242,18 @@ client.on("interactionCreate", async (interaction) => {
 
       const resultChannel = await client.channels.fetch(RESULT_CHANNEL_ID);
 
-      // 1. Post to Discord results channel
       await resultChannel.send(
         `🏆 **Test Result**\n\n👤 ${user}\n⚔️ Mode: ${mode.toUpperCase()}\n🎯 Tier: **${tier}**`
       );
 
-      // 2. Send to backend
       const payload = {
-        player: user.username,
-        gamemode: mode,
-        tier: tier
+        userId: user.id,
+        username: user.username,
+        mode,
+        tier
       };
 
-      console.log("📤 Sending result payload:", payload);
-      console.log("📡 Posting to:", `${API_URL}/result`);
+      console.log("Sending payload to backend:", payload);
 
       const response = await fetch(`${API_URL}/result`, {
         method: "POST",
@@ -288,9 +263,9 @@ client.on("interactionCreate", async (interaction) => {
         body: JSON.stringify(payload)
       });
 
-      const text = await response.text();
-      console.log("📥 Backend response status:", response.status);
-      console.log("📥 Backend response body:", text);
+      const bodyText = await response.text();
+      console.log("Backend status:", response.status);
+      console.log("Backend body:", bodyText);
 
       if (!response.ok) {
         await interaction.editReply("❌ Result posted in Discord, but backend save failed.");
@@ -301,7 +276,7 @@ client.on("interactionCreate", async (interaction) => {
       return;
     }
   } catch (error) {
-    console.error("❌ ERROR:", error);
+    console.error("Bot error:", error);
 
     try {
       if (interaction.isRepliable()) {
