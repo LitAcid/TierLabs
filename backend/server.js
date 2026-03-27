@@ -1,55 +1,44 @@
-const express = require('express');
-const fs = require('fs');
-const cors = require('cors');
-
+const express = require("express");
 const app = express();
-app.use(express.json());
+const cors = require("cors");
+
 app.use(cors());
+app.use(express.json());
 
-const PORT = process.env.PORT || 3000;
-const DATA_FILE = 'data.json';
+let players = {};
 
-function loadData() {
-  if (!fs.existsSync(DATA_FILE)) return {};
-  return JSON.parse(fs.readFileSync(DATA_FILE));
-}
+// ✅ SAVE RESULT FROM BOT
+app.post("/result", (req, res) => {
+  const { player, gamemode, tier } = req.body;
 
-function saveData(data) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
-}
-
-// SAVE RESULT
-app.post('/result', (req, res) => {
-  const { userId, username, mode, tier } = req.body;
-
-  let data = loadData();
-
-  if (!data[userId]) {
-    data[userId] = { username, tiers: {} };
+  if (!player || !gamemode || !tier) {
+    return res.status(400).json({ error: "Missing data" });
   }
 
-  data[userId].tiers[mode] = tier;
+  if (!players[player]) players[player] = {};
+  players[player][gamemode] = tier;
 
-  saveData(data);
+  console.log("Saved:", player, gamemode, tier);
+
   res.json({ success: true });
 });
 
-// GET ALL
-app.get('/players', (req, res) => {
-  res.json(loadData());
+// ✅ GET ALL PLAYERS
+app.get("/data", (req, res) => {
+  res.json(players);
 });
 
-// GET BY USERNAME
-app.get('/player/name/:username', (req, res) => {
-  const data = loadData();
-
-  const player = Object.values(data).find(
-    p => p.username.toLowerCase() === req.params.username.toLowerCase()
-  );
-
-  res.json(player || null);
+// ✅ GET SINGLE PLAYER
+app.get("/player/:name", (req, res) => {
+  const name = req.params.name;
+  res.json(players[name] || {});
 });
 
-app.listen(PORT, () => {
-  console.log(`✅ Backend running`);
+// ✅ ROOT (IMPORTANT FOR RENDER)
+app.get("/", (req, res) => {
+  res.send("TierLabs Backend Running");
 });
+
+// ✅ PORT FIX FOR RENDER
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log("Backend running on port " + PORT));
