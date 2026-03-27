@@ -1,0 +1,5 @@
+node_modules
+.env
+bot/.env
+backend/node_modules
+beckend/node_modules
