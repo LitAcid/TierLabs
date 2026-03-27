@@ -1,3 +1,8 @@
+require("http").createServer((req, res) => {
+  res.write("Bot is alive");
+  res.end();
+}).listen(3000);
+
 const fetch = require("node-fetch");
 require('dotenv').config();
 
@@ -10,7 +15,6 @@ const {
   PermissionsBitField
 } = require('discord.js');
 
-const fetch = require('node-fetch');
 
 const client = new Client({
   intents: [
