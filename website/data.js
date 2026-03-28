@@ -1,5 +1,5 @@
 const TIERLABS_DISCORD = "https://discord.gg/aRbCqpq9N5";
-const ADMIN_PASSWORD = "tierlabs2580";
+const ADMIN_PASSWORD = "CHANGE_THIS_PASSWORD_NOW";
 
 const DEFAULT_DATA = {
   players: [],
@@ -107,22 +107,20 @@ function sortPlayersByPoints(players) {
 
     const aBest = order.indexOf(getBestTier(a.tiers));
     const bBest = order.indexOf(getBestTier(b.tiers));
-    return (aBest === -1 ? 999 : aBest === undefined ? 999 : aBest) - (bBest === -1 ? 999 : bBest === undefined ? 999 : bBest);
+    return (aBest === -1 ? 999 : aBest) - (bBest === -1 ? 999 : bBest);
   });
 }
 
 function getModeIcon(mode) {
   const map = {
     overall: "🏆",
-    ltms: "⚔",
+    crystal: "✦",
     uhc: "❤",
     pot: "🧪",
     nethpot: "◐",
     smp: "◉",
     sword: "🗡",
-    axe: "🪓",
-    mace: "🔨",
-    crystal: "✦"
+    axe: "🪓"
   };
   return map[mode] || "•";
 }

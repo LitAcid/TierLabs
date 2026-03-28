@@ -74,15 +74,13 @@ function sortPlayersByPoints(players) {
 function getModeIcon(mode) {
   const map = {
     overall: "🏆",
-    ltms: "⚔",
+    crystal: "✦",
     uhc: "❤",
     pot: "🧪",
     nethpot: "◐",
     smp: "◉",
     sword: "🗡",
-    axe: "🪓",
-    mace: "🔨",
-    crystal: "✦"
+    axe: "🪓"
   };
   return map[mode] || "•";
 }
