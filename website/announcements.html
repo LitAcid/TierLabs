@@ -23,22 +23,39 @@
     </div>
   </div>
 
-  <script src="data.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
   <script src="app.js"></script>
   <script src="particles.js"></script>
   <script>
     document.getElementById("topbar").innerHTML = renderTopbar("announcements");
 
-    const data = loadSiteData();
-    document.getElementById("announcementsGrid").innerHTML = data.announcements.length
-      ? data.announcements.map(a => `
+    async function loadAnnouncements() {
+      const { data, error } = await supabaseClient
+        .from("announcements")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      const grid = document.getElementById("announcementsGrid");
+
+      if (error) {
+        console.error(error);
+        grid.innerHTML = `<div class="card announcement-card"><h3>Failed to load announcements.</h3></div>`;
+        return;
+      }
+
+      grid.innerHTML = (data || []).length
+        ? data.map(a => `
           <div class="card announcement-card">
-            <div class="eyebrow">${a.date}</div>
+            <div class="eyebrow">${a.date || ""}</div>
             <h3>${a.title}</h3>
             <p class="muted">${a.body}</p>
           </div>
         `).join("")
-      : `<div class="card announcement-card"><h3>No announcements yet</h3></div>`;
+        : `<div class="card announcement-card"><h3>No announcements yet.</h3></div>`;
+    }
+
+    loadAnnouncements();
   </script>
 </body>
 </html>

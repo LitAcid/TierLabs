@@ -14,14 +14,14 @@
     <div class="page-wrap">
       <section class="section">
         <h2 class="section-title">Admin Panel</h2>
-        <p class="section-subtitle">Manage local website data.</p>
+        <p class="section-subtitle">Manage global website data.</p>
 
-        <div id="loginCard" class="card" style="padding:22px;max-width:460px;">
-          <div class="search-box" style="width:100%;">
-            <input id="adminPassword" type="password" placeholder="Enter admin password">
-          </div>
-          <div style="margin-top:12px;">
-            <button class="primary-btn" id="adminLoginBtn">Unlock Admin</button>
+        <div id="authCard" class="card" style="padding:22px;max-width:520px;">
+          <div class="admin-form">
+            <input id="adminEmail" type="email" placeholder="Admin email">
+            <input id="adminPassword" type="password" placeholder="Admin password">
+            <button class="primary-btn" id="loginBtn">Login</button>
+            <button class="secondary-btn" id="logoutBtn" style="display:none;">Logout</button>
           </div>
         </div>
 
@@ -76,15 +76,6 @@
                 <button class="primary-btn" id="saveTesterBtn">Save Tester</button>
               </div>
             </div>
-
-            <div class="card admin-card">
-              <h3>Backup Tools</h3>
-              <div class="admin-form">
-                <button class="secondary-btn" id="exportBtn">Export Data JSON</button>
-                <input id="importFile" type="file" accept=".json">
-                <button class="secondary-btn" id="importBtn">Import Data JSON</button>
-              </div>
-            </div>
           </div>
 
           <div class="card admin-card" style="margin-top:16px;">
@@ -108,114 +99,102 @@
     </div>
   </div>
 
-  <script src="data.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
   <script src="app.js"></script>
   <script src="particles.js"></script>
   <script>
     document.getElementById("topbar").innerHTML = renderTopbar("admin");
 
-    const loginCard = document.getElementById("loginCard");
-    const adminPanel = document.getElementById("adminPanel");
+    const byId = (id) => document.getElementById(id);
 
-    function byId(id) {
-      return document.getElementById(id);
+    async function checkSession() {
+      const { data } = await supabaseClient.auth.getSession();
+      const loggedIn = !!data.session;
+
+      byId("adminPanel").style.display = loggedIn ? "block" : "none";
+      byId("logoutBtn").style.display = loggedIn ? "inline-block" : "none";
+
+      if (loggedIn) {
+        await drawLists();
+      }
     }
 
-    function drawLists() {
-      const data = loadSiteData();
+    async function drawLists() {
+      const playersRes = await supabaseClient.from("players").select("*").order("username");
+      const annsRes = await supabaseClient.from("announcements").select("*").order("created_at", { ascending: false });
+      const testersRes = await supabaseClient.from("testers").select("*").order("completed", { ascending: false });
 
       byId("playersAdminList").innerHTML = "";
       byId("announcementsAdminList").innerHTML = "";
       byId("testersAdminList").innerHTML = "";
 
-      if (!data.players.length) {
-        byId("playersAdminList").innerHTML = `<div class="muted">No players.</div>`;
-      } else {
-        data.players.forEach((p, index) => {
-          const row = document.createElement("div");
-          row.className = "row-card";
-          row.innerHTML = `
-            <strong>${p.username}</strong><br>
-            <span class="muted">${p.region || "NA"} • ${p.title || "Ranked Player"}</span><br>
-            <span class="muted">${JSON.stringify(p.tiers)}</span>
-            <div class="inline-actions">
-              <button class="danger-btn" data-index="${index}" data-type="player">Delete</button>
-            </div>
-          `;
-          byId("playersAdminList").appendChild(row);
-        });
-      }
+      (playersRes.data || []).forEach((p) => {
+        const row = document.createElement("div");
+        row.className = "row-card";
+        row.innerHTML = `
+          <strong>${p.username}</strong><br>
+          <span class="muted">${p.region || "NA"} • ${p.title || "Ranked Player"}</span><br>
+          <span class="muted">${JSON.stringify(p.tiers || {})}</span>
+          <div class="inline-actions">
+            <button class="danger-btn" data-id="${p.id}" data-type="player">Delete</button>
+          </div>
+        `;
+        byId("playersAdminList").appendChild(row);
+      });
 
-      if (!data.announcements.length) {
-        byId("announcementsAdminList").innerHTML = `<div class="muted">No announcements.</div>`;
-      } else {
-        data.announcements.forEach((a, index) => {
-          const row = document.createElement("div");
-          row.className = "row-card";
-          row.innerHTML = `
-            <strong>${a.title}</strong><br>
-            <span class="muted">${a.date}</span>
-            <p>${a.body}</p>
-            <div class="inline-actions">
-              <button class="danger-btn" data-index="${index}" data-type="announcement">Delete</button>
-            </div>
-          `;
-          byId("announcementsAdminList").appendChild(row);
-        });
-      }
+      (annsRes.data || []).forEach((a) => {
+        const row = document.createElement("div");
+        row.className = "row-card";
+        row.innerHTML = `
+          <strong>${a.title}</strong><br>
+          <span class="muted">${a.date || ""}</span>
+          <p>${a.body}</p>
+          <div class="inline-actions">
+            <button class="danger-btn" data-id="${a.id}" data-type="announcement">Delete</button>
+          </div>
+        `;
+        byId("announcementsAdminList").appendChild(row);
+      });
 
-      if (!data.testers.length) {
-        byId("testersAdminList").innerHTML = `<div class="muted">No testers.</div>`;
-      } else {
-        data.testers.forEach((t, index) => {
-          const row = document.createElement("div");
-          row.className = "row-card";
-          row.innerHTML = `
-            <strong>${t.name}</strong><br>
-            <span class="muted">${t.specialty}</span><br>
-            <span class="muted">Completed: ${t.completed}</span>
-            <div class="inline-actions">
-              <button class="danger-btn" data-index="${index}" data-type="tester">Delete</button>
-            </div>
-          `;
-          byId("testersAdminList").appendChild(row);
-        });
-      }
+      (testersRes.data || []).forEach((t) => {
+        const row = document.createElement("div");
+        row.className = "row-card";
+        row.innerHTML = `
+          <strong>${t.name}</strong><br>
+          <span class="muted">${t.specialty}</span><br>
+          <span class="muted">Completed: ${t.completed}</span>
+          <div class="inline-actions">
+            <button class="danger-btn" data-id="${t.id}" data-type="tester">Delete</button>
+          </div>
+        `;
+        byId("testersAdminList").appendChild(row);
+      });
     }
 
-    function clearPlayerForm() {
-      byId("playerUsername").value = "";
-      byId("playerSkin").value = "";
-      byId("playerTitle").value = "";
-      byId("playerRegion").value = "";
-      byId("playerMode").value = "sword";
-      byId("playerTier").value = "HT1";
-    }
+    byId("loginBtn").addEventListener("click", async () => {
+      const email = byId("adminEmail").value.trim();
+      const password = byId("adminPassword").value;
 
-    function clearAnnouncementForm() {
-      byId("annTitle").value = "";
-      byId("annBody").value = "";
-    }
+      const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
 
-    function clearTesterForm() {
-      byId("testerName").value = "";
-      byId("testerAvatar").value = "";
-      byId("testerCompleted").value = "";
-      byId("testerSpecialty").value = "";
-    }
-
-    byId("adminLoginBtn").addEventListener("click", () => {
-      const value = byId("adminPassword").value;
-      if (value === ADMIN_PASSWORD) {
-        loginCard.style.display = "none";
-        adminPanel.style.display = "block";
-        drawLists();
-      } else {
-        alert("Wrong password.");
+      if (error) {
+        alert(error.message);
+        return;
       }
+
+      await checkSession();
+      alert("Logged in.");
     });
 
-    byId("savePlayerBtn").addEventListener("click", () => {
+    byId("logoutBtn").addEventListener("click", async () => {
+      await supabaseClient.auth.signOut();
+      byId("adminPanel").style.display = "none";
+      byId("logoutBtn").style.display = "none";
+      alert("Logged out.");
+    });
+
+    byId("savePlayerBtn").addEventListener("click", async () => {
       const username = byId("playerUsername").value.trim();
       const skin = byId("playerSkin").value.trim();
       const title = byId("playerTitle").value.trim();
@@ -228,33 +207,53 @@
         return;
       }
 
-      const data = loadSiteData();
-      let player = data.players.find((p) => p.username.toLowerCase() === username.toLowerCase());
+      const { data: existing } = await supabaseClient
+        .from("players")
+        .select("*")
+        .eq("username", username)
+        .maybeSingle();
 
-      if (!player) {
-        player = {
+      if (!existing) {
+        const tiers = {};
+        tiers[mode] = tier;
+
+        const { error } = await supabaseClient.from("players").insert({
           username,
-          region,
           skin,
           title: title || "Ranked Player",
-          tiers: {}
-        };
-        data.players.push(player);
+          region,
+          tiers
+        });
+
+        if (error) {
+          alert(error.message);
+          return;
+        }
+      } else {
+        const newTiers = existing.tiers || {};
+        newTiers[mode] = tier;
+
+        const { error } = await supabaseClient
+          .from("players")
+          .update({
+            skin,
+            title: title || "Ranked Player",
+            region,
+            tiers: newTiers
+          })
+          .eq("id", existing.id);
+
+        if (error) {
+          alert(error.message);
+          return;
+        }
       }
 
-      player.skin = skin;
-      player.title = title || "Ranked Player";
-      player.region = region;
-      if (!player.tiers) player.tiers = {};
-      player.tiers[mode] = tier;
-
-      saveSiteData(data);
-      drawLists();
-      clearPlayerForm();
       alert("Player saved.");
+      await drawLists();
     });
 
-    byId("saveAnnouncementBtn").addEventListener("click", () => {
+    byId("saveAnnouncementBtn").addEventListener("click", async () => {
       const title = byId("annTitle").value.trim();
       const body = byId("annBody").value.trim();
 
@@ -263,20 +262,22 @@
         return;
       }
 
-      const data = loadSiteData();
-      data.announcements.unshift({
+      const { error } = await supabaseClient.from("announcements").insert({
         title,
         body,
         date: new Date().toISOString().slice(0, 10)
       });
 
-      saveSiteData(data);
-      drawLists();
-      clearAnnouncementForm();
+      if (error) {
+        alert(error.message);
+        return;
+      }
+
       alert("Announcement added.");
+      await drawLists();
     });
 
-    byId("saveTesterBtn").addEventListener("click", () => {
+    byId("saveTesterBtn").addEventListener("click", async () => {
       const name = byId("testerName").value.trim();
       const avatar = byId("testerAvatar").value.trim();
       const completed = Number(byId("testerCompleted").value || 0);
@@ -287,74 +288,78 @@
         return;
       }
 
-      const data = loadSiteData();
-      let tester = data.testers.find((t) => t.name.toLowerCase() === name.toLowerCase());
+      const { data: existing } = await supabaseClient
+        .from("testers")
+        .select("*")
+        .eq("name", name)
+        .maybeSingle();
 
-      if (!tester) {
-        tester = { name, avatar, completed, specialty };
-        data.testers.push(tester);
-      } else {
-        tester.avatar = avatar;
-        tester.completed = completed;
-        tester.specialty = specialty;
-      }
+      if (!existing) {
+        const { error } = await supabaseClient.from("testers").insert({
+          name,
+          avatar,
+          completed,
+          specialty
+        });
 
-      saveSiteData(data);
-      drawLists();
-      clearTesterForm();
-      alert("Tester saved.");
-    });
-
-    byId("exportBtn").addEventListener("click", () => {
-      exportSiteData();
-    });
-
-    byId("importBtn").addEventListener("click", () => {
-      const file = byId("importFile").files[0];
-      if (!file) {
-        alert("Choose a JSON file first.");
-        return;
-      }
-
-      importSiteData(file, (ok) => {
-        if (!ok) {
-          alert("Invalid JSON.");
+        if (error) {
+          alert(error.message);
           return;
         }
-        drawLists();
-        alert("Data imported.");
-      });
+      } else {
+        const { error } = await supabaseClient
+          .from("testers")
+          .update({
+            avatar,
+            completed,
+            specialty
+          })
+          .eq("id", existing.id);
+
+        if (error) {
+          alert(error.message);
+          return;
+        }
+      }
+
+      alert("Tester saved.");
+      await drawLists();
     });
 
-    byId("playersAdminList").addEventListener("click", (e) => {
+    byId("playersAdminList").addEventListener("click", async (e) => {
       if (!e.target.matches("button[data-type='player']")) return;
-
-      const index = Number(e.target.dataset.index);
-      const data = loadSiteData();
-      data.players.splice(index, 1);
-      saveSiteData(data);
-      drawLists();
+      const id = e.target.dataset.id;
+      const { error } = await supabaseClient.from("players").delete().eq("id", id);
+      if (error) {
+        alert(error.message);
+        return;
+      }
+      await drawLists();
     });
 
-    byId("announcementsAdminList").addEventListener("click", (e) => {
+    byId("announcementsAdminList").addEventListener("click", async (e) => {
       if (!e.target.matches("button[data-type='announcement']")) return;
-
-      const index = Number(e.target.dataset.index);
-      const data = loadSiteData();
-      data.announcements.splice(index, 1);
-      saveSiteData(data);
-      drawLists();
+      const id = e.target.dataset.id;
+      const { error } = await supabaseClient.from("announcements").delete().eq("id", id);
+      if (error) {
+        alert(error.message);
+        return;
+      }
+      await drawLists();
     });
 
-    byId("testersAdminList").addEventListener("click", (e) => {
+    byId("testersAdminList").addEventListener("click", async (e) => {
       if (!e.target.matches("button[data-type='tester']")) return;
-
-      const index = Number(e.target.dataset.index);
-      const data = loadSiteData();
-      data.testers.splice(index, 1);
-      saveSiteData(data);
-      drawLists();
+      const id = e.target.dataset.id;
+      const { error } = await supabaseClient.from("testers").delete().eq("id", id);
+      if (error) {
+        alert(error.message);
+        return;
+      }
+      await drawLists();
     });
+
+    checkSession();
   </script>
 </body>
 </html>

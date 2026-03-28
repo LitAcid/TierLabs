@@ -13,7 +13,7 @@
 
     <div class="page-wrap">
       <section class="section">
-        <h2 class="section-title">Tier Rankings - Tier Labs</h2>
+        <h2 class="section-title">Rankings</h2>
         <p class="section-subtitle">Overall points-based player rankings.</p>
 
         <div id="topPanels" class="top-panels"></div>
@@ -41,16 +41,31 @@
     </div>
   </div>
 
-  <script src="data.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
   <script src="app.js"></script>
   <script src="particles.js"></script>
   <script>
     document.getElementById("topbar").innerHTML = renderTopbar("rankings");
 
-    const data = loadSiteData();
-    const allModes = ["overall", "ltms", "vanilla", "uhc", "pot", "nethpot", "smp", "sword", "axe", "mace"];
-    const players = sortPlayersByPoints(data.players);
+    let players = [];
     let activeMode = "overall";
+    const allModes = ["overall", "ltms", "vanilla", "uhc", "pot", "nethpot", "smp", "sword", "axe", "mace"];
+
+    async function loadPlayers() {
+      const { data, error } = await supabaseClient
+        .from("players")
+        .select("*");
+
+      if (error) {
+        console.error(error);
+        document.getElementById("rankingList").innerHTML = `<div class="rank-row"><div class="muted">Failed to load players.</div></div>`;
+        return;
+      }
+
+      players = sortPlayersByPoints(data || []);
+      refresh();
+    }
 
     function filteredPlayers() {
       if (activeMode === "overall") return players;
@@ -81,7 +96,7 @@
       rankingList.innerHTML = "";
 
       if (!list.length) {
-        rankingList.innerHTML = `<div class="rank-row"><div class="muted">No players found</div></div>`;
+        rankingList.innerHTML = `<div class="rank-row"><div class="muted">No players found.</div></div>`;
         return;
       }
 
@@ -115,8 +130,8 @@
       applySearch(e.target.value.toLowerCase());
     });
 
-    refresh();
     window.setMode = setMode;
+    loadPlayers();
   </script>
 </body>
 </html>

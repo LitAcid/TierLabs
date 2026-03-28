@@ -16,6 +16,87 @@ function renderTopbar(active = "") {
   `;
 }
 
+function getTierPointsMap() {
+  return {
+    HT1: 60,
+    LT1: 54,
+    HT2: 48,
+    LT2: 42,
+    HT3: 36,
+    LT3: 30,
+    HT4: 24,
+    LT4: 18,
+    HT5: 12,
+    LT5: 6
+  };
+}
+
+function getTierOrder() {
+  return ["HT1", "LT1", "HT2", "LT2", "HT3", "LT3", "HT4", "LT4", "HT5", "LT5"];
+}
+
+function getPlayerPoints(tiers = {}) {
+  const map = getTierPointsMap();
+  let total = 0;
+  for (const mode in tiers) total += map[tiers[mode]] || 0;
+  return total;
+}
+
+function getBestTier(tiers = {}) {
+  const order = getTierOrder();
+  let best = null;
+  let bestIndex = 999;
+
+  for (const mode in tiers) {
+    const idx = order.indexOf(tiers[mode]);
+    if (idx !== -1 && idx < bestIndex) {
+      bestIndex = idx;
+      best = tiers[mode];
+    }
+  }
+
+  return best || "UNRANKED";
+}
+
+function sortPlayersByPoints(players) {
+  const order = getTierOrder();
+
+  return [...players].sort((a, b) => {
+    const pointDiff = getPlayerPoints(b.tiers) - getPlayerPoints(a.tiers);
+    if (pointDiff !== 0) return pointDiff;
+
+    const aBest = order.indexOf(getBestTier(a.tiers));
+    const bBest = order.indexOf(getBestTier(b.tiers));
+    return (aBest === -1 ? 999 : aBest) - (bBest === -1 ? 999 : bBest);
+  });
+}
+
+function getModeIcon(mode) {
+  const map = {
+    overall: "🏆",
+    ltms: "⚔",
+    vanilla: "⬡",
+    uhc: "❤",
+    pot: "🧪",
+    nethpot: "◐",
+    smp: "◉",
+    sword: "🗡",
+    axe: "🪓",
+    mace: "🔨",
+    crystal: "✦"
+  };
+  return map[mode] || "•";
+}
+
+function getPlayerAvatarUrl(username, skinUrl = "") {
+  if (skinUrl && skinUrl.trim()) return skinUrl;
+  return `https://mc-heads.net/avatar/${encodeURIComponent(username)}/64`;
+}
+
+function getFallbackAvatarLetter(name) {
+  return (name || "?").charAt(0).toUpperCase();
+}
+
 function renderTopPlayerCard(player, rank) {
   const avatarUrl = getPlayerAvatarUrl(player.username, player.skin);
   const bestTier = getBestTier(player.tiers);
@@ -79,30 +160,4 @@ function renderRankRow(player, rank) {
       </div>
     </div>
   `;
-}
-
-function exportSiteData() {
-  const data = loadSiteData();
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = "tierlabs-data.json";
-  link.click();
-  URL.revokeObjectURL(link.href);
-}
-
-function importSiteData(file, onDone) {
-  const reader = new FileReader();
-
-  reader.onload = (e) => {
-    try {
-      const parsed = JSON.parse(e.target.result);
-      saveSiteData(parsed);
-      onDone(true);
-    } catch (err) {
-      onDone(false);
-    }
-  };
-
-  reader.readAsText(file);
 }
