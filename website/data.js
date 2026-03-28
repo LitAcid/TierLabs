@@ -115,7 +115,6 @@ function getModeIcon(mode) {
   const map = {
     overall: "🏆",
     ltms: "⚔",
-    vanilla: "⬡",
     uhc: "❤",
     pot: "🧪",
     nethpot: "◐",
