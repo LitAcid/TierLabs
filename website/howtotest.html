@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>TierLabs — How to Test</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <canvas id="particles"></canvas>
+  <div class="site-shell">
+    <div id="topbar"></div>
+
+    <div class="page-wrap">
+      <section class="section">
+        <h2 class="section-title">How to Test</h2>
+        <p class="section-subtitle">Simple process for getting ranked.</p>
+
+        <div class="info-grid">
+          <div class="card info-card">
+            <div class="info-number">1</div>
+            <h3>Join Discord</h3>
+            <p class="muted">Use the button at the top-left and enter the TierLabs server.</p>
+          </div>
+
+          <div class="card info-card">
+            <div class="info-number">2</div>
+            <h3>Wait for Queue</h3>
+            <p class="muted">Join when a tester is online for your chosen mode.</p>
+          </div>
+
+          <div class="card info-card">
+            <div class="info-number">3</div>
+            <h3>Get Called</h3>
+            <p class="muted">A private test channel is created when it is your turn.</p>
+          </div>
+
+          <div class="card info-card">
+            <div class="info-number">4</div>
+            <h3>Complete Test</h3>
+            <p class="muted">Your performance decides your TierLabs rank.</p>
+          </div>
+        </div>
+      </section>
+
+      <div class="footer-space"></div>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+  <script src="particles.js"></script>
+  <script>
+    document.getElementById("topbar").innerHTML = renderTopbar("howtotest");
+  </script>
+</body>
+</html>

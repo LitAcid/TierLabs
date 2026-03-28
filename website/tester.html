@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>TierLabs — Top Testers</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <canvas id="particles"></canvas>
+  <div class="site-shell">
+    <div id="topbar"></div>
+
+    <div class="page-wrap">
+      <section class="section">
+        <h2 class="section-title">Top Testers</h2>
+        <p class="section-subtitle">Recognizing the staff that run the system.</p>
+
+        <div id="testersGrid" class="testers-grid"></div>
+      </section>
+
+      <div class="footer-space"></div>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+  <script src="particles.js"></script>
+  <script>
+    document.getElementById("topbar").innerHTML = renderTopbar("testers");
+
+    const data = loadSiteData();
+    const testers = [...data.testers].sort((a, b) => b.completed - a.completed);
+
+    document.getElementById("testersGrid").innerHTML = testers.length
+      ? testers.map((t, i) => `
+        <div class="card tester-card">
+          <div class="tester-head">
+            <div class="tester-avatar">
+              ${t.avatar ? `<img src="${t.avatar}" alt="${t.name}" onerror="this.parentNode.innerHTML='${getFallbackAvatarLetter(t.name)}'">` : getFallbackAvatarLetter(t.name)}
+            </div>
+            <div>
+              <h3>#${i + 1} ${t.name}</h3>
+              <div class="muted">${t.specialty}</div>
+            </div>
+          </div>
+          <div class="kpi" style="margin-top:16px;">${t.completed}</div>
+          <div class="muted">Completed Tests</div>
+        </div>
+      `).join("")
+      : `<div class="card tester-card"><h3>No testers yet</h3></div>`;
+  </script>
+</body>
+</html>

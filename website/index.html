@@ -1,21 +1,122 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>TierLabs</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>TierLabs — Rankings</title>
   <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
+  <canvas id="particles"></canvas>
+  <div class="site-shell">
+    <div id="topbar"></div>
 
-<header>🔥 TierLabs</header>
+    <div class="page-wrap">
+      <section class="section">
+        <h2 class="section-title">Tier Rankings - Tier Labs</h2>
+        <p class="section-subtitle">Overall points-based player rankings.</p>
 
-<div class="search">
-  <input type="text" id="search" placeholder="Search player...">
-</div>
+        <div id="topPanels" class="top-panels"></div>
 
-<div class="leaderboard" id="players"></div>
+        <div class="ranking-shell">
+          <div class="ranking-topbar">
+            <div class="tab-row" id="tabRow"></div>
+            <div class="search-box">
+              <input id="searchInput" type="text" placeholder="Search player...">
+            </div>
+          </div>
 
-<script src="script.js"></script>
+          <div class="ranking-header">
+            <div>#</div>
+            <div>Player</div>
+            <div>Region</div>
+            <div>Tiers</div>
+          </div>
 
+          <div id="rankingList" class="ranking-list"></div>
+        </div>
+      </section>
+
+      <div class="footer-space"></div>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+  <script src="particles.js"></script>
+  <script>
+    document.getElementById("topbar").innerHTML = renderTopbar("rankings");
+
+    const data = loadSiteData();
+    const allModes = ["overall", "ltms", "vanilla", "uhc", "pot", "nethpot", "smp", "sword", "axe", "mace"];
+    const players = sortPlayersByPoints(data.players);
+    let activeMode = "overall";
+
+    function filteredPlayers() {
+      if (activeMode === "overall") return players;
+
+      return players
+        .filter(p => p.tiers && p.tiers[activeMode])
+        .sort((a, b) => {
+          const map = getTierPointsMap();
+          return (map[b.tiers[activeMode]] || 0) - (map[a.tiers[activeMode]] || 0);
+        });
+    }
+
+    function drawTabs() {
+      const row = document.getElementById("tabRow");
+      row.innerHTML = allModes.map(mode => `
+        <button class="mode-tab ${activeMode === mode ? "active" : ""}" onclick="setMode('${mode}')">
+          <div>${getModeIcon(mode)}</div>
+          <div style="margin-top:6px;">${mode.toUpperCase()}</div>
+        </button>
+      `).join("");
+    }
+
+    function drawLeaderboard(list) {
+      const topPanels = document.getElementById("topPanels");
+      const rankingList = document.getElementById("rankingList");
+
+      topPanels.innerHTML = "";
+      rankingList.innerHTML = "";
+
+      if (!list.length) {
+        rankingList.innerHTML = `<div class="rank-row"><div class="muted">No players found</div></div>`;
+        return;
+      }
+
+      list.slice(0, 3).forEach((player, i) => {
+        topPanels.innerHTML += renderTopPlayerCard(player, i + 1);
+      });
+
+      list.forEach((player, i) => {
+        rankingList.innerHTML += renderRankRow(player, i + 1);
+      });
+    }
+
+    function refresh() {
+      drawTabs();
+      drawLeaderboard(filteredPlayers());
+    }
+
+    function setMode(mode) {
+      activeMode = mode;
+      refresh();
+      const q = document.getElementById("searchInput").value.toLowerCase();
+      if (q) applySearch(q);
+    }
+
+    function applySearch(query) {
+      const list = filteredPlayers().filter(p => p.username.toLowerCase().includes(query));
+      drawLeaderboard(list);
+    }
+
+    document.getElementById("searchInput").addEventListener("input", (e) => {
+      applySearch(e.target.value.toLowerCase());
+    });
+
+    refresh();
+    window.setMode = setMode;
+  </script>
 </body>
 </html>

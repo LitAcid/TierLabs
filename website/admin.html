@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>TierLabs — Admin</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <canvas id="particles"></canvas>
+  <div class="site-shell">
+    <div id="topbar"></div>
+
+    <div class="page-wrap">
+      <section class="section">
+        <h2 class="section-title">Admin Panel</h2>
+        <p class="section-subtitle">Manage local website data.</p>
+
+        <div id="loginCard" class="card" style="padding:22px;max-width:460px;">
+          <div class="search-box" style="width:100%;">
+            <input id="adminPassword" type="password" placeholder="Enter admin password">
+          </div>
+          <div style="margin-top:12px;">
+            <button class="primary-btn" id="adminLoginBtn">Unlock Admin</button>
+          </div>
+        </div>
+
+        <div id="adminPanel" style="display:none;">
+          <div class="admin-layout">
+            <div class="card admin-card">
+              <h3>Add / Update Player</h3>
+              <div class="admin-form">
+                <input id="playerUsername" placeholder="Username">
+                <input id="playerSkin" placeholder="Skin URL (optional)">
+                <input id="playerTitle" placeholder="Title (e.g. Combat Master)">
+                <input id="playerRegion" placeholder="Region (NA/EU)">
+                <select id="playerMode">
+                  <option value="sword">SWORD</option>
+                  <option value="axe">AXE</option>
+                  <option value="crystal">CRYSTAL</option>
+                  <option value="nethpot">NETHPOT</option>
+                  <option value="pot">POT</option>
+                  <option value="uhc">UHC</option>
+                  <option value="smp">SMP</option>
+                  <option value="vanilla">VANILLA</option>
+                </select>
+                <select id="playerTier">
+                  <option>HT1</option><option>LT1</option>
+                  <option>HT2</option><option>LT2</option>
+                  <option>HT3</option><option>LT3</option>
+                  <option>HT4</option><option>LT4</option>
+                  <option>HT5</option><option>LT5</option>
+                </select>
+                <button class="primary-btn" id="savePlayerBtn">Save Player</button>
+              </div>
+            </div>
+
+            <div class="card admin-card">
+              <h3>Add Announcement</h3>
+              <div class="admin-form">
+                <input id="annTitle" placeholder="Announcement title">
+                <textarea id="annBody" rows="6" placeholder="Announcement body"></textarea>
+                <button class="primary-btn" id="saveAnnouncementBtn">Add Announcement</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="admin-layout" style="margin-top:16px;">
+            <div class="card admin-card">
+              <h3>Add / Update Tester</h3>
+              <div class="admin-form">
+                <input id="testerName" placeholder="Tester name">
+                <input id="testerAvatar" placeholder="Avatar URL (optional)">
+                <input id="testerCompleted" type="number" placeholder="Completed tests">
+                <input id="testerSpecialty" placeholder="Specialty">
+                <button class="primary-btn" id="saveTesterBtn">Save Tester</button>
+              </div>
+            </div>
+
+            <div class="card admin-card">
+              <h3>Backup Tools</h3>
+              <div class="admin-form">
+                <button class="secondary-btn" id="exportBtn">Export Data JSON</button>
+                <input id="importFile" type="file" accept=".json">
+                <button class="secondary-btn" id="importBtn">Import Data JSON</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card admin-card" style="margin-top:16px;">
+            <h3>Current Players</h3>
+            <div id="playersAdminList" class="table-like"></div>
+          </div>
+
+          <div class="card admin-card" style="margin-top:16px;">
+            <h3>Current Announcements</h3>
+            <div id="announcementsAdminList" class="table-like"></div>
+          </div>
+
+          <div class="card admin-card" style="margin-top:16px;">
+            <h3>Current Testers</h3>
+            <div id="testersAdminList" class="table-like"></div>
+          </div>
+        </div>
+      </section>
+
+      <div class="footer-space"></div>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+  <script src="particles.js"></script>
+  <script>
+    document.getElementById("topbar").innerHTML = renderTopbar("admin");
+
+    const loginCard = document.getElementById("loginCard");
+    const adminPanel = document.getElementById("adminPanel");
+
+    function byId(id) {
+      return document.getElementById(id);
+    }
+
+    function drawLists() {
+      const data = loadSiteData();
+
+      byId("playersAdminList").innerHTML = "";
+      byId("announcementsAdminList").innerHTML = "";
+      byId("testersAdminList").innerHTML = "";
+
+      if (!data.players.length) {
+        byId("playersAdminList").innerHTML = `<div class="muted">No players.</div>`;
+      } else {
+        data.players.forEach((p, index) => {
+          const row = document.createElement("div");
+          row.className = "row-card";
+          row.innerHTML = `
+            <strong>${p.username}</strong><br>
+            <span class="muted">${p.region || "NA"} • ${p.title || "Ranked Player"}</span><br>
+            <span class="muted">${JSON.stringify(p.tiers)}</span>
+            <div class="inline-actions">
+              <button class="danger-btn" data-index="${index}" data-type="player">Delete</button>
+            </div>
+          `;
+          byId("playersAdminList").appendChild(row);
+        });
+      }
+
+      if (!data.announcements.length) {
+        byId("announcementsAdminList").innerHTML = `<div class="muted">No announcements.</div>`;
+      } else {
+        data.announcements.forEach((a, index) => {
+          const row = document.createElement("div");
+          row.className = "row-card";
+          row.innerHTML = `
+            <strong>${a.title}</strong><br>
+            <span class="muted">${a.date}</span>
+            <p>${a.body}</p>
+            <div class="inline-actions">
+              <button class="danger-btn" data-index="${index}" data-type="announcement">Delete</button>
+            </div>
+          `;
+          byId("announcementsAdminList").appendChild(row);
+        });
+      }
+
+      if (!data.testers.length) {
+        byId("testersAdminList").innerHTML = `<div class="muted">No testers.</div>`;
+      } else {
+        data.testers.forEach((t, index) => {
+          const row = document.createElement("div");
+          row.className = "row-card";
+          row.innerHTML = `
+            <strong>${t.name}</strong><br>
+            <span class="muted">${t.specialty}</span><br>
+            <span class="muted">Completed: ${t.completed}</span>
+            <div class="inline-actions">
+              <button class="danger-btn" data-index="${index}" data-type="tester">Delete</button>
+            </div>
+          `;
+          byId("testersAdminList").appendChild(row);
+        });
+      }
+    }
+
+    function clearPlayerForm() {
+      byId("playerUsername").value = "";
+      byId("playerSkin").value = "";
+      byId("playerTitle").value = "";
+      byId("playerRegion").value = "";
+      byId("playerMode").value = "sword";
+      byId("playerTier").value = "HT1";
+    }
+
+    function clearAnnouncementForm() {
+      byId("annTitle").value = "";
+      byId("annBody").value = "";
+    }
+
+    function clearTesterForm() {
+      byId("testerName").value = "";
+      byId("testerAvatar").value = "";
+      byId("testerCompleted").value = "";
+      byId("testerSpecialty").value = "";
+    }
+
+    byId("adminLoginBtn").addEventListener("click", () => {
+      const value = byId("adminPassword").value;
+      if (value === ADMIN_PASSWORD) {
+        loginCard.style.display = "none";
+        adminPanel.style.display = "block";
+        drawLists();
+      } else {
+        alert("Wrong password.");
+      }
+    });
+
+    byId("savePlayerBtn").addEventListener("click", () => {
+      const username = byId("playerUsername").value.trim();
+      const skin = byId("playerSkin").value.trim();
+      const title = byId("playerTitle").value.trim();
+      const region = byId("playerRegion").value.trim().toUpperCase() || "NA";
+      const mode = byId("playerMode").value;
+      const tier = byId("playerTier").value;
+
+      if (!username) {
+        alert("Username required.");
+        return;
+      }
+
+      const data = loadSiteData();
+      let player = data.players.find((p) => p.username.toLowerCase() === username.toLowerCase());
+
+      if (!player) {
+        player = {
+          username,
+          region,
+          skin,
+          title: title || "Ranked Player",
+          tiers: {}
+        };
+        data.players.push(player);
+      }
+
+      player.skin = skin;
+      player.title = title || "Ranked Player";
+      player.region = region;
+      if (!player.tiers) player.tiers = {};
+      player.tiers[mode] = tier;
+
+      saveSiteData(data);
+      drawLists();
+      clearPlayerForm();
+      alert("Player saved.");
+    });
+
+    byId("saveAnnouncementBtn").addEventListener("click", () => {
+      const title = byId("annTitle").value.trim();
+      const body = byId("annBody").value.trim();
+
+      if (!title || !body) {
+        alert("Title and body required.");
+        return;
+      }
+
+      const data = loadSiteData();
+      data.announcements.unshift({
+        title,
+        body,
+        date: new Date().toISOString().slice(0, 10)
+      });
+
+      saveSiteData(data);
+      drawLists();
+      clearAnnouncementForm();
+      alert("Announcement added.");
+    });
+
+    byId("saveTesterBtn").addEventListener("click", () => {
+      const name = byId("testerName").value.trim();
+      const avatar = byId("testerAvatar").value.trim();
+      const completed = Number(byId("testerCompleted").value || 0);
+      const specialty = byId("testerSpecialty").value.trim();
+
+      if (!name) {
+        alert("Tester name required.");
+        return;
+      }
+
+      const data = loadSiteData();
+      let tester = data.testers.find((t) => t.name.toLowerCase() === name.toLowerCase());
+
+      if (!tester) {
+        tester = { name, avatar, completed, specialty };
+        data.testers.push(tester);
+      } else {
+        tester.avatar = avatar;
+        tester.completed = completed;
+        tester.specialty = specialty;
+      }
+
+      saveSiteData(data);
+      drawLists();
+      clearTesterForm();
+      alert("Tester saved.");
+    });
+
+    byId("exportBtn").addEventListener("click", () => {
+      exportSiteData();
+    });
+
+    byId("importBtn").addEventListener("click", () => {
+      const file = byId("importFile").files[0];
+      if (!file) {
+        alert("Choose a JSON file first.");
+        return;
+      }
+
+      importSiteData(file, (ok) => {
+        if (!ok) {
+          alert("Invalid JSON.");
+          return;
+        }
+        drawLists();
+        alert("Data imported.");
+      });
+    });
+
+    byId("playersAdminList").addEventListener("click", (e) => {
+      if (!e.target.matches("button[data-type='player']")) return;
+
+      const index = Number(e.target.dataset.index);
+      const data = loadSiteData();
+      data.players.splice(index, 1);
+      saveSiteData(data);
+      drawLists();
+    });
+
+    byId("announcementsAdminList").addEventListener("click", (e) => {
+      if (!e.target.matches("button[data-type='announcement']")) return;
+
+      const index = Number(e.target.dataset.index);
+      const data = loadSiteData();
+      data.announcements.splice(index, 1);
+      saveSiteData(data);
+      drawLists();
+    });
+
+    byId("testersAdminList").addEventListener("click", (e) => {
+      if (!e.target.matches("button[data-type='tester']")) return;
+
+      const index = Number(e.target.dataset.index);
+      const data = loadSiteData();
+      data.testers.splice(index, 1);
+      saveSiteData(data);
+      drawLists();
+    });
+  </script>
+</body>
+</html>

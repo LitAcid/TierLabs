@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>TierLabs — Announcements</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <canvas id="particles"></canvas>
+  <div class="site-shell">
+    <div id="topbar"></div>
+
+    <div class="page-wrap">
+      <section class="section">
+        <h2 class="section-title">Announcements</h2>
+        <p class="section-subtitle">Official TierLabs updates and notices.</p>
+
+        <div id="announcementsGrid" class="announcements-grid"></div>
+      </section>
+
+      <div class="footer-space"></div>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+  <script src="particles.js"></script>
+  <script>
+    document.getElementById("topbar").innerHTML = renderTopbar("announcements");
+
+    const data = loadSiteData();
+    document.getElementById("announcementsGrid").innerHTML = data.announcements.length
+      ? data.announcements.map(a => `
+          <div class="card announcement-card">
+            <div class="eyebrow">${a.date}</div>
+            <h3>${a.title}</h3>
+            <p class="muted">${a.body}</p>
+          </div>
+        `).join("")
+      : `<div class="card announcement-card"><h3>No announcements yet</h3></div>`;
+  </script>
+</body>
+</html>
